@@ -200,6 +200,110 @@ Dashboard obsahuje `8 vizualizácií`, ktoré poskytujú základný prehľad o k
 </p>
 
 
+---
+### **Graf 1: Top 10 filmov s najvyšším priemerným hodnotením**
+Táto vizualizácia zobrazuje desať filmov s najvyšším priemerným skóre hodnotenia. Pomáha identifikovať najlepšie hodnotené tituly podľa používateľských recenzií. Tieto údaje môžu byť cenné pri odporúčaní filmov alebo plánovaní marketingových stratégií.
 
+```sql
+SELECT 
+    m.title AS nazov_filmu,
+    ROUND(AVG(f.rating), 2) AS priemerne_hodnotenie
+FROM FACT_RATINGS f
+JOIN DIM_MOVIES m ON f.movieID = m.moviesID
+GROUP BY m.title
+ORDER BY priemerne_hodnotenie DESC
+LIMIT 10;
+```
+---
+### **Graf 2: Najaktívnejší používatelia (Top 10 používateľov podľa počtu hodnotení)**
+Graf znázorňuje 10 najaktívnejších používateľov podľa počtu hodnotení. Ukazuje, ktorí používatelia prispeli najviac hodnoteniami. Tieto informácie môžu byť užitočné na identifikáciu používateľov s vysokou angažovanosťou a na prispôsobenie osobných odporúčaní alebo odmeňovacích programov.
+
+```sql
+SELECT 
+    u.usersID AS pouzivatel_id,
+    COUNT(f.ratingID) AS pocet_hodnoteni
+FROM FACT_RATINGS f
+JOIN DIM_USERS u ON f.userID = u.usersID
+GROUP BY u.usersID
+ORDER BY pocet_hodnoteni DESC
+LIMIT 10;
+```
+---
+### **Graf 3: Počet hodnotení podľa dňa v týždni**
+Táto vizualizácia zobrazuje počet hodnotení pre každý deň v týždni. Pomáha identifikovať, ktoré dni sú najpopulárnejšie pre hodnotenie filmov. Tieto údaje môžu byť užitočné na plánovanie marketingových kampaní alebo analýzu používateľského správania.
+
+```sql
+SELECT 
+    d.day_of_week_text AS den,
+    COUNT(f.ratingID) AS pocet_hodnoteni
+FROM FACT_RATINGS f
+JOIN DIM_DATE d ON f.dateID = d.dateID
+GROUP BY d.day_of_week_text
+ORDER BY pocet_hodnoteni DESC;
+```
+---
+### **Graf 4: Celková aktivita v priebehu dňa**
+Táto vizualizácia zobrazuje počet hodnotení podľa jednotlivých hodín v priebehu dňa. Pomáha identifikovať, v ktorých hodinách sú používatelia najaktívnejší pri hodnotení filmov. Tieto údaje môžu byť užitočné pri plánovaní marketingových kampaní alebo pri analýze používateľského správania počas rôznych časových období.
+
+```sql
+SELECT 
+    DATE_PART(hour, f.timestamp) AS hodina,
+    COUNT(f.ratingID) AS pocet_hodnoteni
+FROM FACT_RATINGS f
+GROUP BY DATE_PART(hour, f.timestamp)
+ORDER BY hodina;
+```
+---
+### **Graf 5: Najviac hodnotené žánre (Top 5)**
+Táto vizualizácia poskytuje prehľad o top 5 filmových žánroch podľa počtu hodnotení. Umožňuje analyzovať, ktoré žánre sú medzi používateľmi najobľúbenejšie. Tieto informácie môžu byť užitočné na odporúčanie filmov podľa obľúbených žánrov alebo na cielené marketingové kampane.
+
+```sql
+SELECT 
+    g.genre_name AS zaner,
+    COUNT(f.ratingID) AS pocet_hodnoteni
+FROM FACT_RATINGS f
+JOIN DIM_GENRES g ON f.genreID = g.genresID
+GROUP BY g.genre_name
+ORDER BY pocet_hodnoteni DESC
+LIMIT 5;
+```
+---
+### **Graf 6: Počet hodnotení podľa povolaní používateľov**
+Graf poskytuje prehľad o počte hodnotení podľa rôznych povolaní používateľov. Ukazuje, ktoré profesijné skupiny sú najaktívnejšie pri hodnotení filmov. Tieto informácie môžu byť použité na cielenie personalizovaných odporúčaní a analýzu používateľských preferencií podľa ich povolaní.
+
+```sql
+SELECT 
+    u.occupation_name AS povolanie,
+    COUNT(f.ratingID) AS pocet_hodnoteni
+FROM FACT_RATINGS f
+JOIN DIM_USERS u ON f.userID = u.usersID
+GROUP BY u.occupation_name
+ORDER BY pocet_hodnoteni DESC;
+```
+---
+### **Graf 7: Počet hodnotení podľa pohlavia používateľov**
+Táto vizualizácia zobrazuje počet hodnotení podľa pohlavia používateľov. Umožňuje identifikovať, aké sú hodnotenia medzi mužmi a ženami. Tieto údaje môžu byť užitočné pri analýze demografických trendov a pri tvorbe personalizovaných odporúčaní pre jednotlivé pohlavia.
+
+```sql
+SELECT 
+    u.gender AS pohlavie,
+    COUNT(f.ratingID) AS pocet_hodnoteni
+FROM FACT_RATINGS f
+JOIN DIM_USERS u ON f.userID = u.usersID
+GROUP BY u.gender;
+
+```
+---
+### **Graf 8: Počet hodnotení podľa vekových skupín používateľov**
+Táto vizualizácia zobrazuje počet hodnotení podľa rôznych vekových skupín používateľov. Umožňuje analyzovať, ktoré vekové skupiny sú najaktívnejšie pri hodnotení filmov. Tieto informácie môžu byť užitočné pri tvorbe personalizovaných odporúčaní a plánovaní marketingových kampaní zameraných na konkrétne vekové skupiny.
+```sql
+SELECT 
+    u.age_group AS vekova_skupina,
+    COUNT(f.ratingID) AS pocet_hodnoteni
+FROM FACT_RATINGS f
+JOIN DIM_USERS u ON f.userID = u.usersID
+GROUP BY u.age_group
+ORDER BY pocet_hodnoteni DESC;
+```
 
 
