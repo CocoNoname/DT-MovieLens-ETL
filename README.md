@@ -187,3 +187,19 @@ DROP TABLE IF EXISTS genres_movies_staging;
 DROP TABLE IF EXISTS age_group_staging;
 ```
 ETL proces v Snowflake umožnil spracovanie pôvodných dát z `.csv` formátu do viacdimenzionálneho modelu typu hviezda. Tento proces zahŕňal čistenie, obohacovanie a reorganizáciu údajov. Výsledný model umožňuje analýzu filmových preferencií a správania používateľov, pričom poskytuje základ pre vizualizácie a reporty.
+
+---
+## **4 Vizualizácia dát**
+
+Dashboard obsahuje `8 vizualizácií`, ktoré poskytujú základný prehľad o kľúčových metrikách a trendoch týkajúcich sa filmov, používateľov a hodnotení. Tieto vizualizácie odpovedajú na dôležité otázky a umožňujú lepšie pochopiť správanie používateľov a ich preferencie.
+
+<p align="center">
+  <img src="https://github.com/CocoNoname/DT-MovieLens-ETL/blob/main/MovieLensFiltracie.png" alt="Dashboard Filtrácie">
+  <br>
+  <em>Obrázok 3 Dashboard MovieLens datasetu</em>
+</p>
+
+
+
+
+
