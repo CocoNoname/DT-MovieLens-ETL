@@ -306,4 +306,9 @@ GROUP BY u.age_group
 ORDER BY pocet_hodnoteni DESC;
 ```
 
+Dashboard poskytuje komplexný pohľad na dáta, odpovedá na kľúčové otázky ohľadom preferencií filmov a správania používateľov. Vizualizácie zjednodušujú interpretáciu dát a môžu byť použité na vylepšenie odporúčacích systémov, marketingových stratégií a filmových služieb.
 
+---
+
+
+**Autor:** Erik Csicsó
