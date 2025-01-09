@@ -4,79 +4,82 @@ Tento repozitár obsahuje implementáciu ETL procesu v Snowflake pre analýzu d�
 
 ---
 ## **1. Úvod a popis zdrojových dát**
-Cieľom semestrálneho projektu je analyzovať dáta týkajúce sa filmov, používateľov a ich recenzií. Táto analýza umožňuje identifikovať trendy vo filmových preferenciách, najpopulárnejšie filmy a správanie používateľov.
+Hlavným cieľom tohto projektu je analyzovať údaje o filmoch, používateľoch a ich hodnoteniach. Táto analýza pomáha odhaliť trendy vo filmových preferenciách, najobľúbenejšie filmy, správanie rôznych skupín používateľov a viac.
 
-Zdrojové dáta pochádzajú z GroupLens datasetu dostupného [na tejto stránke](https://grouplens.org/datasets/movielens/). Dataset obsahuje osem hlavných tabuliek:
-- `age_group`
-- `genres`
-- `genres_movies`
-- `movies`
-- `occupations`
-- `ratings`
-- `tags`
-- `users`
+Zdrojové dáta pochádzajú z GroupLens datasetu dostupného [na tejto stránke](https://grouplens.org/datasets/movielens/).
 
-Účelom ETL procesu bolo tieto dáta pripraviť, transformovať a sprístupniť pre viacdimenzionálnu analýzu.
+---
+Dataset obsahuje osem hlavných tabuliek:
+
+  - `age_group` - Kategórie vekových skupín používateľov.
+  - `genres` - Žánre filmov.
+  - `genres_movies` - Prepojenie medzi filmami a ich žánrami.
+  - `movies` - Informácie o filmoch.
+  - `occupations` - Zoznam povolaní používateľov.
+  - `ratings` - Hodnotenia filmov používateľmi.
+  - `tags` - Zlepšenie filtrácie/vyhladávanie
+  - `users` - Informácie o používateľoch.
 
 ---
 ### **1.1 Dátová architektúra**
 
 ### **ERD diagram**
-Surové dáta sú usporiadané v relačnom modeli, ktorý je znázornený na **entitno-relačnom diagrame (ERD)**:
+  Zobrazuje relačný model surových dát, znázornený na **entitno-relačnom diagrame (ERD)**:
 
 <p align="center">
   <img src=https://github.com/CocoNoname/DT-MovieLens-ETL/blob/main/ERD_Schema.png alt="ERD Schema">
   <br>
-  <em>Obrázok 1 Entitno-relačná schéma MovieLens</em>
+  <em>Entitno-relačná schéma pre MovieLens</em>
 </p>
 
 ---
 ## **2 Dimenzionálny model**
 
-Pri návrhu sme využili **hviezdicový model (star schema)**, ktorý nám umožňuje efektívnu analýzu dát. V centre tohto modelu je faktová tabuľka **`fact_ratings`**, ktorá je spojená s nasledujúcimi dimenziami:
+Pre projekt bol navrhnutý multi-dimenzionálny model typu hviezda. Tento model umožňuje efektívnu analýzu hodnotení filmov používateľmi. Model obsahuje faktovú tabuľku **`fact_ratings`** a niekoľko dimenzionálnych tabuliek:
+
 - **`dim_users`**: Demografické údaje o používateľoch vrátane vekových kategórií, povolaní a pohlaví.
 - **`dim_tags`**: Podrobné informácie o tagoch ako popisy a dátumy vytvorenia.
 - **`dim_date`**: Informácie o dátumoch hodnotení vrátane dňa, mesiaca a roku.
 - **`dim_genres`**: Detailné údaje o žánroch filmov.
 - **`dim_movies`**: Detailné informácie o filmoch vrátane názvov a rokov vydania.
 
-Štruktúra hviezdicového modelu je znázornená na diagrame nižšie. Diagram ukazuje prepojenia medzi faktovou tabuľkou a dimenziami, čo zjednodušuje pochopenie a implementáciu modelu.
+- **`fact_ratings`**: Obsahuje kľúčové metriky a prepojenie na dimenzie.
+---
 
+Hviezdicový model zobrazuje jasné vzťahy medzi dimenziami a faktovou tabuľkou:
 <p align="center">
   <img src=https://github.com/CocoNoname/DT-MovieLens-ETL/blob/main/HviezdaSchema_MovieLens.png alt="Hviezdicova Schéma">
   <br>
-  <em>Obrázok 2 Schéma hviezdy pre MovieLens</em>
+  <em> Schéma hviezdy pre MovieLens</em>
 </p>
 
 
 ---
 ## **3. ETL proces v Snowflake**
-ETL proces pozostával z troch hlavných fáz: `extrahovanie` (Extract), `transformácia` (Transform) a `načítanie` (Load). Tento proces bol implementovaný v Snowflake s cieľom pripraviť zdrojové dáta zo staging vrstvy do viacdimenzionálneho modelu vhodného na analýzu a vizualizáciu.
+Účelom ETL procesu je dáta pripraviť, transformovať a sprístupniť pre viacdimenzionálnu analýzu.
 
----
+
 ### **3.1 Extract (Extrahovanie dát)**
-Dáta zo zdrojového datasetu (formát `.csv`) boli najprv nahraté do Snowflake prostredníctvom interného stage úložiska s názvom `Hippo_stage`. Stage v Snowflake slúži ako dočasné úložisko na import alebo export dát. Vytvorenie stage bolo zabezpečené príkazom:
 
-#### Príklad kódu:
+#### Vytvorenie my_stage:
 ```sql
 CREATE OR REPLACE STAGE my_stage;
 ```
-Do stage boli následne nahraté súbory obsahujúce údaje o filmoch, používateľoch, hodnoteniach, zamestnaniach, tagoch, žánroch a vekových skupín. Dáta boli importované do staging tabuliek pomocou príkazu `COPY INTO`. Pre každú tabuľku sa použil podobný príkaz:
-
+#### Naimportovanie dát:
 ```sql
 COPY INTO age_group_staging
 FROM @my_stage/age_group.csv
 FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1);
 ```
 
-V prípade nekonzistentných záznamov bol použitý parameter `ON_ERROR = 'CONTINUE'`, ktorý zabezpečil pokračovanie procesu bez prerušenia pri chybách.
-
 ---
-### **3.1 Transfor (Transformácia dát)**
+### **3.2 Transform (Transformácia dát)**
+V tejto fáze boli dáta zo staging tabuliek vyčistené, transformované a obohatené.
 
-V tejto fáze boli dáta zo staging tabuliek vyčistené, transformované a obohatené. Hlavným cieľom bolo pripraviť dimenzie a faktovú tabuľku, ktoré umožnia jednoduchú a efektívnu analýzu.
+1. **Dimenzia `dim_users`:**
+- Poskytuje informácie o veku, pohlaví a zamestnaní používateľov, pričom umožňuje sledovanie historických zmien.
 
-Dimenzie boli navrhnuté na poskytovanie kontextu pre faktovú tabuľku. `dim_users` obsahuje údaje o používateľoch vrátane vekových kategórií, pohlavia, zamestnania. Transformácia zahŕňala rozdelenie veku používateľov do kategórií (napr. „18-29“) a pridanie popisov zamestnaní. Táto dimenzia je typu SCD 2, čo umožňuje sledovať historické zmeny v zamestnaní používateľov.
+- `dim_users`: Rozdelenie veku používateľov do kategórií:
 ```sql
 CREATE OR REPLACE TABLE dim_users AS
 SELECT DISTINCT
@@ -98,10 +101,24 @@ FROM users_staging u
 LEFT JOIN occupations_staging o ON u.occupation_id = o.id
 ORDER BY u.id;
 ```
-Dimenzia `dim_date` je navrhnutá tak, aby uchovávala informácie o dátumoch hodnotení filmov. Obsahuje odvodené údaje, ako sú deň, mesiac, rok, deň v týždni (v textovom aj číselnom formáte). Táto dimenzia je štruktúrovaná tak, aby umožňovala podrobné časové analýzy, ako sú trendy hodnotení podľa dní, mesiacov alebo rokov. Z hľadiska SCD je táto dimenzia klasifikovaná ako SCD Typ 0. To znamená, že existujúce záznamy v tejto dimenzii sú nemenné a uchovávajú statické informácie.
+---
+2. **Dimenzia `dim_tags`:**
 
-V prípade, že by bolo potrebné sledovať zmeny súvisiace s odvodenými atribútmi (napr. pracovné dni vs. sviatky), bolo by možné prehodnotiť klasifikáciu na SCD Typ 1 (aktualizácia hodnôt) alebo SCD Typ 2 (uchovávanie histórie zmien). V aktuálnom modeli však táto potreba neexistuje, preto je `dim_date` navrhnutá ako SCD Typ 0 s rozširovaním o nové záznamy podľa potreby.
+- `dim_tags`: Údaje o značkách:
+```sql
+CREATE OR REPLACE TABLE dim_tags AS 
+SELECT DISTINCT
+    t.id AS tagsID,
+    t.tags,
+    t.created_at
+FROM tags_staging t;
+```
+---
+3. **Dimenzia `dim_date`:**
+   
+- Dimenzia `dim_date` je štruktúrovaná tak, aby umožňovala podrobné časové analýzy, ako sú trendy hodnotení podľa dní, mesiacov alebo rokov. Z hľadiska SCD je táto dimenzia klasifikovaná ako SCD Typ 0. To znamená, že existujúce záznamy v tejto dimenzii sú nemenné a uchovávajú statické informácie.
 
+- `dim_date`: Časová analýza dát:
 ```sql
 CREATE OR REPLACE TABLE dim_date AS
 SELECT
@@ -143,7 +160,23 @@ GROUP BY CAST(rated_at AS DATE),
          DATE_PART(month, rated_at), 
          DATE_PART(year, rated_at); 
 ```
-Podobne `dim_movies` obsahuje údaje o filmoch, ako sú názov a rok vydania . Táto dimenzia je typu SCD Typ 0, pretože údaje o filoch sú považované za nemenné, napríklad názov filmu alebo rok vydania sa nemenia. 
+---
+4. **Dimenzia `dim_genres`:**
+
+- `dim_genres`: Časová analýza dát:
+```sql
+CREATE OR REPLACE TABLE dim_genres AS
+SELECT DISTINCT
+    g.id AS genresID,
+    g.name AS genre_name
+FROM genres_staging g;
+```
+---
+5. **Dimenzia `dim_movies`:**
+
+-Podobne `dim_movies` obsahuje údaje o filmoch, ako sú názov a rok vydania . Táto dimenzia je typu SCD Typ 0, pretože údaje o filoch sú považované za nemenné, napríklad názov filmu alebo rok vydania sa nemenia. 
+
+- `dim_movies`: Transformácia filmových údajov:
 ```sql
 CREATE OR REPLACE TABLE dim_movies AS 
 SELECT DISTINCT
@@ -152,7 +185,12 @@ SELECT DISTINCT
     m.release_year
 FROM movies_staging m;
 ```
-Faktová tabuľka `fact_ratings` obsahuje záznamy o hodnoteniach a prepojenia na všetky dimenzie. Obsahuje kľúčové metriky, ako je hodnota hodnotenia a časový údaj.
+---
+6. **Dimenzia `fact_ratings`:**
+
+-Faktová tabuľka `fact_ratings` obsahuje záznamy o hodnoteniach a prepojenia na všetky dimenzie. Obsahuje kľúčové metriky, ako je hodnota hodnotenia a časový údaj.
+
+- `fact_ratings`: Kombinácia hlavných metrík:
 ```sql
 CREATE OR REPLACE TABLE fact_ratings AS
 SELECT DISTINCT
@@ -175,7 +213,7 @@ LEFT JOIN dim_tags ta ON ta.tagsID = r.id;
 ---
 ### **3.3 Load (Načítanie dát)**
 
-Po úspešnom vytvorení dimenzií a faktovej tabuľky boli dáta nahraté do finálnej štruktúry. Na záver boli staging tabuľky odstránené, aby sa optimalizovalo využitie úložiska:
+Na záver po úspešnom nahratí údajov boli staging tabuľky odstránené, aby sa optimalizovalo využitie úložiska:
 ```sql
 DROP TABLE IF EXISTS movies_staging;
 DROP TABLE IF EXISTS tags_staging;
@@ -186,17 +224,16 @@ DROP TABLE IF EXISTS genres_staging;
 DROP TABLE IF EXISTS genres_movies_staging;
 DROP TABLE IF EXISTS age_group_staging;
 ```
-ETL proces v Snowflake umožnil spracovanie pôvodných dát z `.csv` formátu do viacdimenzionálneho modelu typu hviezda. Tento proces zahŕňal čistenie, obohacovanie a reorganizáciu údajov. Výsledný model umožňuje analýzu filmových preferencií a správania používateľov, pričom poskytuje základ pre vizualizácie a reporty.
 
 ---
 ## **4 Vizualizácia dát**
 
-Dashboard obsahuje `8 vizualizácií`, ktoré poskytujú základný prehľad o kľúčových metrikách a trendoch týkajúcich sa filmov, používateľov a hodnotení. Tieto vizualizácie odpovedajú na dôležité otázky a umožňujú lepšie pochopiť správanie používateľov a ich preferencie.
+Dashboard poskytuje prehľad prostredníctvom `8 vizualizácií`, ktoré ilustrujú kľúčové metriky a trendy vo filmoch, používateľoch a ich hodnoteniach. Tieto vizualizácie odpovedajú na zásadné otázky
 
 <p align="center">
   <img src="https://github.com/CocoNoname/DT-MovieLens-ETL/blob/main/MovieLensFiltracie.png" alt="Dashboard Filtrácie">
   <br>
-  <em>Obrázok 3 Dashboard MovieLens datasetu</em>
+  <em> Dashboard MovieLens datasetu</em>
 </p>
 
 
