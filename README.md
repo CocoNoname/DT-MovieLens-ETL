@@ -6,7 +6,7 @@ Tento repozitár obsahuje implementáciu ETL procesu v Snowflake pre analýzu d�
 ## **1. Úvod a popis zdrojových dát**
 Cieľom semestrálneho projektu je analyzovať dáta týkajúce sa filmov, používateľov a ich recenzií. Táto analýza umožňuje identifikovať trendy vo filmových preferenciách, najpopulárnejšie filmy a správanie používateľov.
 
-Zdrojové dáta pochádzajú z GroupLens datasetu dostupného [tu](https://grouplens.org/datasets/movielens/). Dataset obsahuje osem hlavných tabuliek:
+Zdrojové dáta pochádzajú z GroupLens datasetu dostupného [na tejto stránke](https://grouplens.org/datasets/movielens/). Dataset obsahuje osem hlavných tabuliek:
 - `age_group`
 - `genres`
 - `genres_movies`
@@ -306,7 +306,7 @@ GROUP BY u.age_group
 ORDER BY pocet_hodnoteni DESC;
 ```
 
-Dashboard poskytuje komplexný pohľad na dáta, odpovedá na kľúčové otázky ohľadom preferencií filmov a správania používateľov. Vizualizácie zjednodušujú interpretáciu dát a môžu byť použité na vylepšenie odporúčacích systémov, marketingových stratégií a filmových služieb.
+Dashboard ponúka komplexný prehľad dát a odpovedá na zásadné otázky týkajúce sa filmových preferencií a správania používateľov. Vizualizácie uľahčujú interpretáciu dát a môžu byť využité na zlepšenie odporúčacích systémov, marketingových stratégií a filmových služieb.
 
 ---
 
